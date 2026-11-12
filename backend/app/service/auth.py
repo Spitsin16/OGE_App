@@ -129,3 +129,25 @@ class AuthService:
         await self.db.commit()
 
         return new_access_token, new_refresh_token
+
+    async def logout(self, refresh_token: str) -> None:
+        refresh_token_hash = hash_refresh_token(refresh_token)
+
+        auth_session = await self.db.scalar(
+            select(AuthSession)
+            .where(AuthSession.refresh_token_hash == refresh_token_hash)
+            .with_for_update()
+        )
+
+        now = datetime.now(UTC)
+
+        if (
+            (auth_session is None)
+            or (auth_session.expires_at <= now)
+            or (auth_session.revoked_at is not None)
+        ):
+            return
+
+        auth_session.revoked_at = now
+
+        await self.db.commit()
