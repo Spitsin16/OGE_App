@@ -12,3 +12,7 @@ class InvalidCredentialsError(AppError):
 
 class InactiveUserError(AppError):
     status_code = 403
+
+
+class InvalidRefreshTokenError(AppError):
+    status_code = 401

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +8,7 @@ from backend.app.exceptions.exception_classes import (
     EmailAlreadyRegisteredError,
     InactiveUserError,
     InvalidCredentialsError,
+    InvalidRefreshTokenError,
 )
 from backend.app.models.auth_session import AuthSession
 from backend.app.models.user import User
@@ -90,3 +93,39 @@ class AuthService:
         await self.db.commit()
 
         return existing_user, access_token, refresh_token
+
+    async def refresh_tokens(self, refresh_token: str) -> tuple[str, str]:
+        refresh_token_hash = hash_refresh_token(refresh_token)
+
+        auth_session = await self.db.scalar(
+            select(AuthSession)
+            .where(AuthSession.refresh_token_hash == refresh_token_hash)
+            .with_for_update()
+        )
+
+        now = datetime.now(UTC)
+
+        if (
+            (auth_session is None)
+            or (auth_session.expires_at <= now)
+            or (auth_session.revoked_at is not None)
+        ):
+            raise InvalidRefreshTokenError("Invalid or expired refresh token")
+
+        user = await self.db.get(User, auth_session.user_id)
+
+        if user is None:
+            raise InvalidRefreshTokenError("Invalid or expired refresh token")
+
+        if not user.is_active:
+            raise InactiveUserError("User account is inactive")
+
+        new_refresh_token = create_refresh_token()
+
+        auth_session.refresh_token_hash = hash_refresh_token(new_refresh_token)
+
+        new_access_token = create_access_token(user.id)
+
+        await self.db.commit()
+
+        return new_access_token, new_refresh_token
