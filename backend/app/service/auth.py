@@ -12,8 +12,8 @@ from backend.app.exceptions.exception_classes import (
 )
 from backend.app.models.auth_session import AuthSession
 from backend.app.models.user import User
-from backend.utils.passwords import hash_password, verify_password
-from backend.utils.tokens import (
+from backend.app.utils.passwords import hash_password, verify_password
+from backend.app.utils.tokens import (
     calculate_refresh_token_expires_at,
     create_access_token,
     create_refresh_token,
