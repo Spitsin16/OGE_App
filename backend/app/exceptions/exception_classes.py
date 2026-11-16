@@ -16,3 +16,7 @@ class InactiveUserError(AppError):
 
 class InvalidRefreshTokenError(AppError):
     status_code = 401
+
+
+class InvalidAccessTokenError(AppError):
+    status_code = 401
