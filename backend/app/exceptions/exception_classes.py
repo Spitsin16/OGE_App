@@ -20,3 +20,11 @@ class InvalidRefreshTokenError(AppError):
 
 class InvalidAccessTokenError(AppError):
     status_code = 401
+
+
+class ProfileAlreadyExistsError(AppError):
+    status_code = 409
+
+
+class ProfileNotFoundError(AppError):
+    status_code = 404
